@@ -1,5 +1,12 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:share_plus/share_plus.dart';
 
 void main() {
   runApp(const MyApp());
@@ -203,17 +210,82 @@ class _MyHomePageState extends State<MyHomePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              IconButton(
-                                onPressed: () {},
-                                icon: const Icon(
-                                  Icons.share,
-                                ),
+                              Column(
+                                children: [
+                                  IconButton(
+                                    onPressed: () => _shareScreenshot(
+                                      context: context,
+                                      shareWidget: QrImageView(
+                                        backgroundColor: Colors.white,
+                                        padding: const EdgeInsets.all(30.0),
+                                        data: 'BEGIN:VCARD\n'
+                                            'VERSION:3.0\n'
+                                            'N:${dataMap['lastName']};${dataMap['firsName']};;${dataMap['prefix']};\n'
+                                            'FN:${dataMap['firsName']} ${dataMap['lastName']}\n'
+                                            'ORG:${dataMap['orgName']}\n'
+                                            'TITLE:${dataMap['title']}\n'
+                                            'TEL;TYPE=Work:+967${dataMap['phone']}\n'
+                                            'TEL;TYPE=Work:+9675327773,${dataMap['extension']}\n'
+                                            'EMAIL:${dataMap['email']}\n'
+                                            'URL:${dataMap['url']}\n'
+                                            'END:VCARD',
+                                        version: QrVersions.auto,
+                                        size: 220.0,
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.share,
+                                    ),
+                                  ),
+                                  const Text('مشاركة'),
+                                ],
                               ),
-                              IconButton(
-                                onPressed: () {},
-                                icon: const Icon(
-                                  Icons.download,
-                                ),
+                              Column(
+                                children: [
+                                  IconButton(
+                                    onPressed: () => (shareWidget) async {
+                                      final box = context.findRenderObject()
+                                          as RenderBox?;
+
+                                      ScreenshotController()
+                                          .captureFromWidget(shareWidget)
+                                          .then((Uint8List bytes) async {
+                                        final Directory dir =
+                                            await getApplicationSupportDirectory();
+                                        final String ts = DateTime.now()
+                                            .millisecondsSinceEpoch
+                                            .toString();
+
+                                        final String filePath =
+                                            '${dir.path}/$ts.png';
+                                        await XFile.fromData(bytes)
+                                            .saveTo(filePath);
+                                        await Share.shareXFiles(
+                                          [XFile(filePath)],
+                                          sharePositionOrigin:
+                                              box!.localToGlobal(Offset.zero) &
+                                                  box.size,
+                                        );
+                                        Directory? externalStorageDirectory =
+                                            await getExternalStorageDirectory();
+
+                                        File file = new File(path.join(
+                                            externalStorageDirectory!.path,
+                                            path.basename('fsfs')));
+
+                                        await file
+                                            .writeAsBytes(bytes)
+                                            .then((value) {
+                                          print('done');
+                                        });
+                                      });
+                                    },
+                                    icon: const Icon(
+                                      Icons.download,
+                                    ),
+                                  ),
+                                  const Text('تنزيل'),
+                                ],
                               ),
                             ],
                           )
@@ -222,12 +294,33 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                 ),
-                child: Text('Generate'),
+                child: const Text('Generate'),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _shareScreenshot({
+    required BuildContext context,
+    required Widget shareWidget,
+  }) async {
+    final box = context.findRenderObject() as RenderBox?;
+
+    ScreenshotController()
+        .captureFromWidget(shareWidget)
+        .then((Uint8List bytes) async {
+      final Directory dir = await getApplicationSupportDirectory();
+      final String ts = DateTime.now().millisecondsSinceEpoch.toString();
+
+      final String filePath = '${dir.path}/$ts.png';
+      await XFile.fromData(bytes).saveTo(filePath);
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
+      );
+    });
   }
 }
