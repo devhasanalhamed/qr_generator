@@ -193,6 +193,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           QrImageView(
+                            backgroundColor: Colors.white,
+                            padding: const EdgeInsets.all(30.0),
                             data: 'BEGIN:VCARD\n'
                                 'VERSION:3.0\n'
                                 'N:${dataMap['lastName']};${dataMap['firsName']};;${dataMap['prefix']};\n'
@@ -269,15 +271,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                         Directory? externalStorageDirectory =
                                             await getExternalStorageDirectory();
 
-                                        File file = new File(path.join(
+                                        File file = File(path.join(
                                             externalStorageDirectory!.path,
                                             path.basename('fsfs')));
 
                                         await file
                                             .writeAsBytes(bytes)
-                                            .then((value) {
-                                          print('done');
-                                        });
+                                            .then((value) {});
                                       });
                                     },
                                     icon: const Icon(
